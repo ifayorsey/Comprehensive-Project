@@ -1,0 +1,187 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+  fig_width: 5 
+  fig_height: 3
+  
+---
+<!--
+The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
+-->
+
+```{r, include=FALSE}
+library(RJSONIO) 
+library(RCurl) 
+library(ngram)
+library(tm)
+library(wordcloud)
+library(ggplot2)
+library(glmnet)
+library(text2vec)
+library(data.table)
+library(magrittr)
+library(dplyr)
+library(mosaic)
+library(RTextTools)
+library(e1071)
+# library(caret)
+library(tidyr)
+library(stringr)
+library(jsonlite)
+library(tidytext)
+library(rpart)
+library(broom)
+library(kableExtra)
+#library(MASS) #lda 
+```
+
+
+## Data:
+
+The data used for this analysis is a series happy moments. In collaboration with the  University of Tokyo, MIT researchers interview thousands of people and asked them to list 10 happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into HappyDB, a corpus of 100,535 happy moments. The data set is host publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
+
+It is important to note that this curated data set contains cleaned textual data. In it includes 9 variables, many of which identify the author and qualities of the texts.  The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category. For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.
+
+```{r, include=FALSE}
+setwd("~/Desktop/Statistics/Comps/Comps - Fayorsey/Comps-Fayorsey19E")
+data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
+
+data$predicted_category <- as.factor(data$predicted_category)
+```
+
+-------------------------------------------------------------------------------------
+Response                                                          Predicted Category
+------------------------------------------------------------ -----------------------
+ I was happy when my son got 90% marks in his examination             Acheivement
+ 
+ I went to the gym this morning and did yoga                           Excercise
+ 
+ My dad and I went fishing                                              Bonding
+
+------------------------------------------------------------- ----------------------
+
+
+###Data Preprocessing:
+
+```{r, include = FALSE}
+set.seed(7)
+random_hm <- sample(1:nrow(data), 15000) 
+corpus    <- Corpus(VectorSource(data$cleaned_hm[random_hm]))
+skipWords <- function(x) removeWords(x, words = c(stopwords(kind = "en"),'happy', 'day', 'got', 'went', 'today', 'made', 'one', 'two', 'time', 'last', 'first', 'going', 'getting', 'took', 'found', 'lot', 'really', 'saw', 'see', 'month', 'week', 'day', 'yesterday', 'year', 'ago', 'now', 'still', 'since', 'something', 'great', 'good', 'long', 'thing', 'toi', 'without', 'yesteri', '2s', 'toand', 'ing'))
+funcs <- list(skipWords, stripWhitespace, removeNumbers, removePunctuation, tolower)
+a         <- tm_map(corpus, FUN = tm_reduce, tmFuns = funcs)
+a_tdm     <- TermDocumentMatrix(a)
+m         <- as.matrix(a_tdm)
+v         <- sort(rowSums(m), decreasing = TRUE)
+d         <- data.frame(word = names(v), freq = v)
+d <- head(d, 10);d
+```
+
+In order to analyze how words influence a predicted category, the data set had to be transformed. First, each character vector response is converted into a corpus. A corpus is simply a collection of natural langauge constructed with a specific purpose. Our corpus consists of 15,000 responses samples from the larger dataset.   
+```{r}
+as.character(corpus[[1]])
+```
+
+Entries in the corpus are then cleaned of symbols, punctuations, and stop words. Once accomplished the corpus is reduced a collection of key words.
+
+```{r}
+as.character(a[[1]])
+```
+
+The next step is to create a document term matrix. A document term matrix is a corpus transformation that represents each word as a feature, and each response as a row. The matrix is populated with values 0 or 1, depending on the absence or presence of that word in the document. Traditionally, document term matrices are high dimensional due to thousands of words that can be used as a feature. Often times many of these cells are empty to represent the absence of a word from that document. High sparsity (the proportion of entries which are zero of the tdm) is another known condition of document terms matrices.
+
+```{r, echo=FALSE, fig.cap = "Term Document Matrix for First Three Responses"}
+a_dtm <- DocumentTermMatrix(a)
+wa <- as.matrix(a_dtm)
+
+
+wa[1:3,1:4]
+```
+
+
+## Exploratory Data Analysis:
+
+In this section, I present some preliminary results from summaries and exploratory analysis of the cleaned data obtained above. First we look at the response variable **predicted category**. Next, we explore statistics regarding the explanatory variables **terms**.
+
+#### Predicted Category
+
+Affection and achievement were the most talked about categories (33.9% and 34.1% respectively). This follows conventional logic given that love and sense of accomplishment are vital traits to a good quality of life. Nature and exercises accounted for just 1.2% and 1.8% of labeled responses in the entire data set.
+
+In a predictive setting, having highly disproportionate classes can lead to errors when making predictions based on that training data. When classes are unequally represented, models may simply decide to always predict a certain class in order to achieve a high accuracy. This accuracy paradox does not reflect effective predictions for the model, but rather the state of the underlying distribution. While this is not the case for our data set, consideration must be taken for the classifications of minority labels.
+
+```{r, echo=FALSE, fig.height=3, fig.cap = "PieChart"}
+ggplot(data, aes(x=predicted_category, fill=predicted_category))+
+  geom_bar()+
+  labs(title = "Distribution of Predicted Category")+
+  guides(fill="none")+
+  coord_polar(theta = "y", start=0)
+```
+
+```{r, include=FALSE}
+count <- sapply(data$cleaned_hm, wordcount) # Counts number of words
+summary(count)
+```
+
+#### Term Count
+
+As shown in the figure below, the majority of entries are between 5 and 14 words. Over 4,000 reviews contain over 50 words. Many of these words add little to no value to an algorithmic interpretation of the sentence. These are the commonly used words such as “a”, “I”, “was” that were removed from the corpus.
+
+```{r, echo=FALSE, fig.height=3, fig.cap = "Word Count Distribution"}
+category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+              "40-44","45-49",">=50")
+count_class <- cut(count, breaks = c(0,4,9,14,19,24,29,34,39,44,49,Inf), 
+                   labels = category, include.lowest = TRUE)
+ggplot()+
+  geom_bar(aes(x = count_class, fill = count_class))+
+  ylim(0,30000)+
+  labs(x = "Word Count", y = "Number of Happy Moments", 
+       title = "Word Count Distribution")+
+  guides(fill = "none")
+```
+
+#### Terms used in each category
+
+Two metrics frequently used to quantify the importance of a word are it’s term frequency (tf), and inverse document frequency (idf). Tf measures how frequently a word appears in a document, while idf weights frequently used words less than words rarely used (Leopold, 2002). When combined, the tf-idf is the frequency of a term adjusted by how rarely it is used.	
+	
+```{r, include=FALSE}
+words <- data %>%
+  unnest_tokens(word, cleaned_hm) %>%
+  count(predicted_category, word, sort = TRUE) %>%
+  ungroup()
+
+totalwords <- words %>% 
+  group_by(predicted_category) %>% 
+  summarize(total = sum(n))
+
+words <- left_join(words, totalwords);words
+
+tf <- words %>%
+  bind_tf_idf(word, predicted_category, n);tf
+
+tf %>%
+  select(-total) %>%
+  filter(n >=30) %>% 
+  arrange(desc(tf_idf));tf
+
+```
+
+```{r, echo=FALSE, warning=FALSE , fig.cap = "TD-IDF per Category"}
+tf %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(predicted_category) %>% 
+  top_n(10) %>% 
+  ungroup %>%
+  ggplot() +
+  geom_col(aes(word, tf_idf, fill = predicted_category),show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~predicted_category, ncol = 3, scales = "free") +
+  coord_flip()
+```
+
+As shown in the figure above, a breakdown of the highest tf-idf word per category yields further insight into words associated with each label. For phrases related to achievement, words like “won”, “received”, and “accepted” have the highest adjusted usage. In responses categorized as exercise, we see terms related to working out and equipment used. These key terms provide natural separators by which our algorithms can uses to classify future responses. In the next section, we discuss some of the methods used to predict the categories of happy moments. 
+
+
+
+![Algorithmic Framework for Text Categorization](/Users/ifayorse/Desktop/Algo.png)

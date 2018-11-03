@@ -1,0 +1,224 @@
+```{r, include=FALSE}
+library(RJSONIO) 
+library(RCurl) 
+library(ngram)
+library(tm)
+library(wordcloud)
+library(ggplot2)
+library(glmnet)
+library(text2vec)
+library(data.table)
+library(magrittr)
+library(dplyr)
+library(mosaic)
+library(RTextTools)
+library(e1071)
+# library(caret)
+library(tidyr)
+library(stringr)
+library(jsonlite)
+library(tidytext)
+library(rpart)
+#library(MASS) #lda 
+```
+
+
+```{r, include=FALSE}
+setwd("~/Desktop/Statistics/Comps/Comps - Fayorsey/Comps-Fayorsey19E")
+data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
+
+data$predicted_category <- as.factor(data$predicted_category)
+```
+
+```{r, include=FALSE}
+set.seed(57)
+
+bin_data <- data[sample(1:nrow(data), 15000), ]
+my.matrix1 <- create_matrix(bin_data$cleaned_hm, language="english", removeNumbers=TRUE, stemWords=FALSE, weighting=tm::weightTfIdf)
+
+container1 <- create_container(my.matrix1, bin_data$predicted_category, trainSize=1:8000, testSize =8001:10000,virgin = FALSE)
+
+```
+
+```{r, include=FALSE}
+set.seed(6)
+start_svm <- Sys.time()
+svm_model <- train_model(container1, "SVM")
+end_svm <- Sys.time()
+
+svm_results <- classify_model(container1, svm_model)
+ac_svm <- mean(svm_results$SVM_LABEL != bin_data[8001:10000,9])
+
+table(svm_results$SVM_LABEL, bin_data[8001:10000,9])
+
+
+end_svm - start_svm
+
+pr_svm <- create_precisionRecallSummary(container1, svm_results)
+```
+
+```{r, include=FALSE}
+set.seed(1)
+start_tree <- Sys.time()
+tree_model <- train_model(container1, "TREE")
+end_tree <- Sys.time()
+
+tree_results <- classify_model(container1, tree_model)
+table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+
+ac_tree <- (682+363+202+39)/2000
+end_tree - start_tree
+
+pr_tree <- create_precisionRecallSummary(container1, tree_results)
+```
+
+```{r, include=FALSE}
+set.seed(2)
+start_multi <- Sys.time()
+multinomial_model <- train_model(container1, "GLMNET", family="multinomial")
+end_multi <- Sys.time()
+
+multi_results <- classify_model(container1, multinomial_model)
+table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+ac_multi <- mean(multi_results$GLMNET_LABEL != bin_data[8001:10000,9])
+end_multi - start_multi
+
+pr_multi <- create_precisionRecallSummary(container1, multi_results)
+```
+
+```{r, include=FALSE}
+# set.seed(3)
+# start_bagging <- Sys.time()
+# lda_model <- train_model(container1, "BAGGING")
+# end_bagging <- Syst.time()
+# 
+# bagging_results <- classify_model(container1, lda_model)
+# table(bagging_results$BAGGING_LABEL, bin_data[8001:10000,9])
+# ac_bagging <- mean(bagging_results$BAGGING_LABEL != bin_data[8001:10000,9])
+# 
+# end_bagging - start_bagging
+# pr_bag <- create_precisionRecallSummary(container1, bagging_results)
+```
+
+```{r, include=FALSE}
+set.seed(4)
+start_rf <- Sys.time()
+rf_model <- train_model(container1, "RF", ntree=10)
+end_rf <- Sys.time()
+
+rf_results <- classify_model(container1, rf_model)
+table( rf_results$FORESTS_LABEL, bin_data[8001:10000,9])
+ac_rf <- mean(rf_results$FORESTS_LABEL != bin_data[8001:10000,9])
+end_rf-start_rf
+
+pr_rf <- create_precisionRecallSummary(container1, rf_results)
+```
+
+```{r, include=FALSE}
+set.seed(5)
+start_lda <- Sys.time()
+lda_model <- train_model(container1, "SLDA")
+end_lda <- Sys.time()
+
+lda_results <- classify_model(container1, lda_model)
+table(lda_results$SLDA_LABEL, bin_data[8001:10000,9])
+ac_lda <- mean(lda_results$SLDA_LABEL != bin_data[8001:10000,9])
+end_lda - start_lda
+
+pr_lda <- create_precisionRecallSummary(container1, lda_results)
+```
+
+
+```{r, include=FALSE}
+time_svm <- end_svm - start_svm
+
+# time_bagging <- end_bagging - start_bagging
+
+time_rf <- end_rf - start_rf
+
+time_multi <- end_multi - start_multi
+
+time_lda <- end_lda - start_lda
+
+time_tree <- end_tree - start_tree
+
+times <- c(time_svm, time_multi, time_tree, time_rf, time_lda) 
+accuracy <- c(ac_svm, ac_multi, ac_tree, ac_rf, ac_lda)
+
+times <- as.data.frame(as.numeric(unlist(times)))
+
+colnames(times) <- c("runtime")
+
+
+model <- c("SVM", "Multinomial", "Decision Trees", "Random Forests", "LDA")
+
+run_table <- cbind(model, accuracy, times)
+
+```
+
+
+# Results
+
+**Note**: The Bagging model did not provide reproducible results. As such, it was omitted from the remainder of the study.
+
+### Run Time
+
+Training times for the 2,000 responses varied substantially across all methods. The linear SVM and decision tree were amongst the fastest trained models taking just `r time_svm` and `r time_tree` seconds respectively. The multinomial logistic was the fastest model, taking just  `r time_multi` seconds. These were all significantly faster than Random Forests (`r time_rf` seconds) and LDA (`r time_lda` seconds). 
+
+The higher average runtime for the ensemble method follows convention given that it is an aggregation of several learning methods. The runtime of the LDA model initially came as a surprise, however LDA computes discriminant scores $\delta_k(x)$ by finding a linear combination of the independent variables. In a dtm setting, this becomes a linear combination of over 10,000 variables for each of the 6 categories. The training time of the SVM, decision tree, and multinomial models were quite impressive, given the nature of the problem when applied to larger data sets.
+
+```{r, echo=FALSE, fig.cap = "Performance Metrics"}
+run_table
+```
+
+### Classification Accuracy
+
+As stated in the introduction the goal of this analysis was to compare classification error rates between models. SVMs had the lowest misclassification rate with `r ac_svm`.  This was a slight improvement on the multinomial model (`r ac_multi` misclassification rate). LDA and Random Forest performed suprisingling well (`r ac_lda` for LDA and `r ac_rf` for rf). The decision tree produced the highest misclassification rate with `r ac_tree` incorrectly categorized.
+
+```{r, echo=FALSE, fig.cap = "Bar Plot of Missclasification Rate"}
+ggplot()+
+  geom_bar(aes(x= reorder(run_table$model, run_table$accuracy), y=run_table$accuracy, fill=run_table$model), stat="identity")+
+  labs(x="Model", y="Percentage Misclassified", title="Missclasstion Rates")+
+  guides(fill="none")
+```
+
+	
+While accuracy is a valid measure for information retrieval, in situations where classes are imbalanced, always predicting one class may yield a high accuracy. Precision and recall can be used to focus the evaluation on the correctly label categories (true positives). Precision is defined as the proportion of items i placed in the category correctly out of every algorithmic declaration of i, while recall is the proportion of items correctly guessed when it truly belonged in that category (Platt, 5). Low precision-high recall systems guess a label frequently, however a significant portion of labels are incorrect. High precision-low recall systems are the opposite, predicting a class less frequently but more accurately. Ideal systems have both high precision and high recall,will return many results, with all results labeled correctly. The table below consists of precision-recall values for the category achievement for all 5 algorithms.
+
+```{r, echo=FALSE, , fig.cap = "Precision Recall Table for Category Achievement"}
+pr_table <- rbind(pr_svm[1,], pr_multi[1,], pr_tree[1,], pr_rf[1,], pr_lda[1,])
+
+rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree", "Random Forests", "LDA")
+
+pr_table
+```
+
+As you can see, the most efficient classifier had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a precision of 0.64 and recall of 0.96. However unlike the decision tree, the overall accuracy of the multinomial was quite high (77.5% labeled correctly). When their confusion matrices are compared, it is immediately apparent that 2 classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This lead to poor generalizability, and the algorithm only predicting the majority categories. On the other hand, the multinomial accurately predicted a high proportion of the other classes.
+
+
+```{r, echo=FALSE, , fig.cap = "Decision Tree Confusion Matrix"}
+table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+```
+
+```{r, echo=FALSE, , fig.cap = "Multinomial Confusion Matrix"}
+table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+```
+
+
+\newpage
+
+## Conclusion:
+
+This study compares the performance of six machine learning algorithms in the classification of unstructured textual data. First, we discuss how the transformation of texts into term document matrices allows for words to be used as features in supervised methods. We also show how to each of the algorithms creates a classifier based on feature inputs, and predicts labels for new data. The results of this study show that fairly accurate text classifiers can be trained from relatively simple models. Following Joachim's findings, it was emprically shown that SVM models consistently outperformed competing methods in precision, recall, and runtime when applied to the categorization of happy moments. Given the high number of features and sparsity of the data, features were presumed to be linearly separable in p dimensions. This aided in the creation of decision boundaries cast by the SVM. Although other methods such as Random Forests and LDA had high classification rates, their runtimes made them poor alternatives. A more detailed look at precision and recall for the LDA model highlights how its failed assumptions impacted the accuracy of the model. Although beneficial due to their interpretability, the high variance of the decision tree demonstrated the limits of their predictive power.
+
+This study demonstrates the importance of taking the structure of one's data into consideration. Had I investigated some of the variables further, I may have realized methods like LDA were not suitable for this data before spending several hours building the model. It is equally important to consider the type of decision boundary being cast. In highly linear settings, LDA, Logistic or SVM may be the superior methods. If non-linear, kernels or transformations may need to take place.
+
+Naturally, there were several limitations to this study, most of which had to do with the high dimensionality of the data. All the classifiers were trained on words represented as features for each document. Given the nature of human language there will be many words that may not appear in the training data. Additionally, working with sparse matrices is computationally inefficient. The presence of the zero value provides no information while allocating memory for each 32-bit value. A tdm of the entire dataset takes up 25 megabytes of spaces. Using 15,000 observations, a more manageable 3.1 mb tdm was created. While this made computations feasible, reducing the size of the corpus and tdm reduced the number of unique words encountered in the training data. 
+
+For future studies, we look to test other NLP techniques on this data, given that the results were derived from simple word index terms. For example, how might multi-word (n-grams), noun phrases, and weighting affect the classification accuracy? Another interesting factor to consider is the role of dimension reduction techniques such as principal component analysis and support vector decomposition. These methods project data onto lower dimensional subspaces so may alleviate some of the issues with sparse matrices, and provide improved algorithmic runtimes. 
+
+
+ 
+
+
+

@@ -40,7 +40,7 @@ container1 <- create_container(my.matrix1, bin_data$predicted_category, trainSiz
 
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(6)
 start_svm <- Sys.time()
 svm_model <- train_model(container1, "SVM")
@@ -57,7 +57,7 @@ end_svm - start_svm
 pr_svm <- create_precisionRecallSummary(container1, svm_results)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(1)
 start_tree <- Sys.time()
 tree_model <- train_model(container1, "TREE")
@@ -72,7 +72,7 @@ end_tree - start_tree
 pr_tree <- create_precisionRecallSummary(container1, tree_results)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(2)
 start_multi <- Sys.time()
 multinomial_model <- train_model(container1, "GLMNET", family="multinomial")
@@ -86,11 +86,11 @@ end_multi - start_multi
 pr_multi <- create_precisionRecallSummary(container1, multi_results)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 # set.seed(3)
 # start_bagging <- Sys.time()
 # lda_model <- train_model(container1, "BAGGING")
-# end_bagging <- Syst.time()
+# end_bagging <- Sys.time()
 # 
 # bagging_results <- classify_model(container1, lda_model)
 # table(bagging_results$BAGGING_LABEL, bin_data[8001:10000,9])
@@ -100,7 +100,7 @@ pr_multi <- create_precisionRecallSummary(container1, multi_results)
 # pr_bag <- create_precisionRecallSummary(container1, bagging_results)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(4)
 start_rf <- Sys.time()
 rf_model <- train_model(container1, "RF", ntree=10)
@@ -114,7 +114,7 @@ end_rf-start_rf
 pr_rf <- create_precisionRecallSummary(container1, rf_results)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(5)
 start_lda <- Sys.time()
 lda_model <- train_model(container1, "SLDA")
@@ -157,9 +157,9 @@ run_table <- cbind(model, accuracy, times)
 ```
 
 
-# Results
+# Results {#results}
 
-**Note**: The Bagging model did not provide reproducible results. As such, it was omitted from the remainder of the study.
+**Note**: The Bagging model did not provide reproducible results. As such, it was omitted from the remainder of the study. Each model was trained on a random sample of 8,000 observations, and tested on a sample of 2,000 unseen responses. As previously discussed each observation in the document term matrix contains an indicator variable for the presence of the featured word.
 
 ### Run Time
 

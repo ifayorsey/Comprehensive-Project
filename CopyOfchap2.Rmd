@@ -27,9 +27,11 @@ library(acstats)
 
 
 
-#Theoretical Background 
+# Theoretical Background {#the-background}
 
 Broadly speaking, there are two types of machine learning techniques: supervised, and unsupervised methods. In a supervised setting, inputs are mapped to a predefined label, and models are trained to predict labels for a new set of inputs. In the case of text classification, each response and associated category are learned by a classifier which then predicts labels for new responses. In an unsuerpvised setting, there is no corresponding labels to the inputs. These methods cluster response based on associations between responses. Given that this study aims to compare the performance of classifiers when labeling texts, we remain in a supervised setting.
+
+The objective is to minimize the classification error rate. The classification error rate is defined as the proportion of training observations in the region that do not belong to the most common class.
 
 
 ## SVM:
@@ -40,9 +42,9 @@ Where M is the width of the margin. In a high dimensional setting however, this 
 
 Where $\xi$ is a slack variable representing observations on the wrong side of the margin/hyperplane. In this setting, points on the wrong side of the margin are penalized proportionally to the distance from the boundary. 
 
-Tuning parameter, C can be introduced restrain the number of points that violate the hyperplane. As C increases we allow for more observations to appear on the wrong side of the hyperplane so the margin widens. Conversely, as C decreases less violations results in a smaller margin. Increasing the cost parameter additionally makes models more expensive and increase the risk of losing model generability.
+Tuning parameter, C can be introduced restrain the number of points that violate the hyperplane. As C increases we allow for more observations to appear on the wrong side of the hyperplane so the margin widens. Conversely, as C decreases less violations result in a smaller margin. Increasing the cost parameter additionally makes models more expensive and increases the risk of losing model generability.
 
-In situations where there are more than K > 2 classes, K SVMs are fit and compared to the remaining K-1 classes. Observations are assigned to a class based on which $\beta_0k+\beta_{1k}X_{1k}+...+\beta_{pk}X_{pk}$ is the greatest (Hastie, 337-356).
+In situations where there are more than k > 2 classes, k SVMs are fit and compared to the remaining k-1 classes. Observations are assigned to a class based on which $\beta_0k+\beta_{1k}X_{1k}+...+\beta_{pk}X_{pk}$ is the greatest (Hastie, 337-356).
 
 SVMs hold a unique property in that they can classify observations independent of the dimensionality of the feature space (Joachim). By separating the data on the largest margin rather than the number of features, our model can be easily generalized, irrespective of the size of the feature space.
 	
@@ -51,7 +53,7 @@ The issue of non-linearity is typically addressed by enlarging the feature space
 
 ## Decision Trees
 
-Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In our setting, every node is dtm feature. In a classification setting, leaves are class labels. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class k observations in node m, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m. The objective is to minimize the classification error rate. The classification error rate is defined as the proportion of training observations in the region that do not belong to the most common class. This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate.
+Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In our setting, every node is a dtm feature. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class k observations in node m, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m.  This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate.
 
 One benefit of decision trees are their interpretability. However do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
 

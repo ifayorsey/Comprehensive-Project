@@ -1,9 +1,11 @@
 ---
-output: pdf_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 # Conclusion {.unnumbered}
-  \setcounter{chapter}{4}
+  \setcounter{chapter}{3}
 	\setcounter{section}{0}
 
 If we don't want Conclusion to have a chapter number next to it, we can add the `{.unnumbered}` attribute.  This has an unintended consequence of the sections being labeled as 3.6 for example though instead of 4.1.  The \LaTeX\ commands immediately following the Conclusion declaration get things back on track.
@@ -28,6 +30,10 @@ This first appendix includes all of the R chunks of code that were hidden throug
 
 ```{r ref.label = 'include_packages', results = 'hide', echo = TRUE}
 ```
+
+```{r ref.label = "packages", echo = TRUE}
+```
+
 
 #### In [](#ref_labels):
 

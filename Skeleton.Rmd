@@ -1,8 +1,8 @@
 ---
-author: 'Your R. Name'
-date: 'February 20xx'
+author: 'Ian Fayorsey'
+date: 'November 2018'
 division: 'Statistics'
-advisor: 'Advisor F. Name'
+advisor: 'Advisor Nicholas Horton'
 department: 'Mathematics and Statistics'
 title: 'My Comprehensive Evaluation'
 abstract: >

@@ -19,10 +19,11 @@ if(!require(acstats)){
   library(devtools)
   devtools::install_github("Amherst-Statistics/acstats")
   }
-library(acstats)
+
 ```
 
 ```{r packages, include=FALSE}
+library(acstats)
 library(RJSONIO) 
 library(RCurl) 
 library(ngram)
@@ -55,7 +56,7 @@ The data used for this analysis is a series happy moments. In collaboration with
 
 It is important to note that this curated data set contains cleaned textual data. In it includes 9 variables, many of which identify the author and qualities of the texts.  The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category. For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.
 
-```{r ref.label="load_data", include=FALSE}
+```{r, include=FALSE}
 setwd("~/Desktop/Statistics/Comps/Comps - Fayorsey/Comps-Fayorsey19E")
 data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
 
@@ -70,6 +71,7 @@ Response                                                          Predicted Cate
  I went to the gym this morning and did yoga                           Excercise
  
  My dad and I went fishing                                              Bonding
+
 ------------------------------------------------------------- ----------------------
 
 
@@ -88,6 +90,7 @@ v         <- sort(rowSums(m), decreasing = TRUE)
 d         <- data.frame(word = names(v), freq = v)
 d <- head(d, 10);d
 ```
+
 
 In order to analyze how words influence a predicted category, the data set had to be transformed. First, each character vector response is converted into a corpus. A corpus is simply a collection of natural langauge constructed with a specific purpose. Our corpus consists of 15,000 responses samples from the larger dataset.   
 ```{r}

@@ -163,7 +163,7 @@ run_table <- cbind(model, accuracy, times)
 
 ### Run Time
 
-Training times for the 2,000 responses varied substantially across all methods. The linear SVM and decision tree were amongst the fastest trained models taking just `r time_svm` and `r time_tree` seconds respectively. The multinomial logistic was the fastest model, taking just  `r time_multi` seconds. These were all significantly faster than Random Forests (`r time_rf` seconds) and LDA (`r time_lda` seconds). 
+Training times for the 8,000 responses varied substantially across all methods. The linear SVM and decision tree were amongst the fastest trained models taking just `r run_table[1,3]` and `r run_table[2,3]` seconds respectively. The multinomial logistic was the fastest model, taking just  `r run_table[3,3]` seconds. These were all significantly faster than Random Forests (`r run_table[4,3]` seconds) and LDA (`r run_table[5,3]` seconds). 
 
 The higher average runtime for the ensemble method follows convention given that it is an aggregation of several learning methods. The runtime of the LDA model initially came as a surprise, however LDA computes discriminant scores $\delta_k(x)$ by finding a linear combination of the independent variables. In a dtm setting, this becomes a linear combination of over 10,000 variables for each of the 6 categories. The training time of the SVM, decision tree, and multinomial models were quite impressive, given the nature of the problem when applied to larger data sets.
 
@@ -193,7 +193,7 @@ rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree", "Random Forests",
 pr_table
 ```
 
-As you can see, the most efficient classifier had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a precision of 0.64 and recall of 0.96. However unlike the decision tree, the overall accuracy of the multinomial was quite high (77.5% labeled correctly). When their confusion matrices are compared, it is immediately apparent that 2 classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This lead to poor generalizability, and the algorithm only predicting the majority categories. On the other hand, the multinomial accurately predicted a high proportion of the other classes.
+As you can see, the most efficient classifier had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a low precision of 0.64 and high recall of 0.96. However unlike the decision tree, the overall accuracy of the multinomial was quite high (77.5% labeled correctly). When their confusion matrices are compared, it is immediately apparent that 2 classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This lead to poor generalizability, and the algorithm only predicting the majority categories. On the other hand, the multinomial accurately predicted a high proportion of the other classes.
 
 
 ```{r, echo=FALSE, , fig.cap = "Decision Tree Confusion Matrix"}

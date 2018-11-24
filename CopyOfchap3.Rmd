@@ -203,13 +203,13 @@ As you can see, the most efficient classifier had high precision and high recall
 
 ```{r, echo=FALSE, , fig.cap = "Decision Tree Confusion Matrix" ,fig.width=3}
 table1 <- table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
-kable(table1[,1:5], longtable=T, format = "markdown") 
+kable(table1[,1:7], format = "markdown") 
 
 ```
 
 ```{r, echo=FALSE, , fig.cap = "Multinomial Confusion Matrix", fig.width=3}
 table2 <- table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
-kable(table2[,1:5], longtable=T, format = "markdown")
+kable(table2[,1:6], format = "markdown")
 
 ```
 

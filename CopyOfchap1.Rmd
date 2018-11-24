@@ -46,13 +46,13 @@ library(tidytext)
 library(rpart)
 library(broom)
 library(kableExtra)
-library(devtools)
 #library(MASS) #lda 
 ```
 
 
 # Data
-The data used for this analysis is a series happy moments. In collaboration with the  University of Tokyo, MIT researchers interviewed thousands of people and asked them to list 10 happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into HappyDB, a corpus of 100,535 happy moments. The data set is host publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
+
+The data used for this analysis is a series happy moments. In collaboration with the  University of Tokyo, MIT researchers interview thousands of people and asked them to list 10 happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into HappyDB, a corpus of 100,535 happy moments. The data set is host publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
 
 It is important to note that this curated data set contains cleaned textual data. In it includes 9 variables, many of which identify the author and qualities of the texts.  The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category. For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.
 
@@ -195,6 +195,7 @@ tf %>%
 ```
 
 As shown in the figure above, a breakdown of the highest tf-idf word per category yields further insight into words associated with each label. For phrases related to achievement, words like “won”, “received”, and “accepted” have the highest adjusted usage. In responses categorized as exercise, we see terms related to working out and equipment used. These key terms provide natural separators by which our algorithms can uses to classify future responses. In the next section, we discuss some of the methods used to predict the categories of happy moments. 
+
 
 \begin{figure}[htbp]
 \centering

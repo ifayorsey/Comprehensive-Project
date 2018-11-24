@@ -8,7 +8,7 @@ output:
 
 This study compares the performance of six machine learning algorithms in the classification of unstructured textual data. First, we discuss how the transformation of texts into term document matrices allows for words to be used as features in supervised methods. We also show how to each of the algorithms creates a classifier based on feature inputs, and predicts labels for new data. The results of this study show that fairly accurate text classifiers can be trained from relatively simple models. Following Joachim's findings, it was emprically shown that SVM models consistently outperformed competing methods in precision, recall, and runtime when applied to the categorization of happy moments. Given the high number of features and sparsity of the data, features were presumed to be linearly separable in p dimensions. This aided in the creation of decision boundaries cast by the SVM. Although other methods such as Random Forests and LDA had high classification rates, their runtimes made them poor alternatives. A more detailed look at precision and recall for the LDA model highlights how its failed assumptions impacted the accuracy of the model. Although beneficial due to their interpretability, the high variance of the decision tree demonstrated the limits of their predictive power.
 
-This study demonstrates the importance of taking the structure of one's data into consideration. Had I investigated some of the variables further, I may have realized methods like LDA were not suitable for this data before spending several hours building the model. It is equally important to consider the type of decision boundary being cast. In highly linear settings, LDA, Logistic or SVM may be the superior methods. If non-linear, kernels or transformations may need to take place.
+This study demonstrates the importance of taking the structure of one's data, and algorithmic assumptions into consideration. Had I investigated some of the variables further, I may have realized methods like LDA were not suitable for this data before spending several hours building the model. It is equally important to consider the type of decision boundary being cast. In highly linear settings, LDA, Logistic or SVM may be the superior methods. If non-linear, kernels or transformations may need to take place.
 
 Naturally, there were several limitations to this study, most of which had to do with the high dimensionality of the data. All the classifiers were trained on words represented as features for each document. Given the nature of human language there will be many words that may not appear in the training data. Additionally, working with sparse matrices is computationally inefficient. The presence of the zero value provides no information while allocating memory for each 32-bit value. A tdm of the entire dataset takes up 25 megabytes of spaces. Using 15,000 observations, a more manageable 3.1 mb tdm was created. While this made computations feasible, reducing the size of the corpus and tdm reduced the number of unique words encountered in the training data. 
 
@@ -68,8 +68,16 @@ data$predicted_category <- as.factor(data$predicted_category)
 set.seed(7)
 random_hm <- sample(1:nrow(data), 15000) 
 corpus    <- Corpus(VectorSource(data$cleaned_hm[random_hm]))
-skipWords <- function(x) removeWords(x, words = c(stopwords(kind = "en"),'happy', 'day', 'got', 'went', 'today', 'made', 'one', 'two', 'time', 'last', 'first', 'going', 'getting', 'took', 'found', 'lot', 'really', 'saw', 'see', 'month', 'week', 'day', 'yesterday', 'year', 'ago', 'now', 'still', 'since', 'something', 'great', 'good', 'long', 'thing', 'toi', 'without', 'yesteri', '2s', 'toand', 'ing'))
-funcs <- list(skipWords, stripWhitespace, removeNumbers, removePunctuation, tolower)
+skipWords <- function(x) removeWords(x, 
+            words = c(stopwords(kind = "en"),'happy',
+            'day', 'got', 'went', 'today', 'made', 'one',
+            'two', 'time', 'last', 'first', 'going', 'getting',
+            'took', 'found', 'lot', 'really', 'saw', 'see', 'month',
+            'week', 'day', 'yesterday', 'year', 'ago', 'now', 'still',
+            'since', 'something', 'great', 'good', 'long', 'thing',
+            'toi', 'without', 'yesteri', '2s', 'toand', 'ing'))
+funcs <- list(skipWords, stripWhitespace, removeNumbers,
+              removePunctuation, tolower)
 a         <- tm_map(corpus, FUN = tm_reduce, tmFuns = funcs)
 a_tdm     <- TermDocumentMatrix(a)
 m         <- as.matrix(a_tdm)
@@ -108,10 +116,12 @@ summary(count)
 ```{r, fig.height=3, fig.cap = "Word Count Distribution",eval=FALSE, echo=TRUE}
 #Distribution of Word Counts
 
-category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34",
+              "35-39",
               "40-44","45-49",">=50")
-count_class <- cut(count, breaks = c(0,4,9,14,19,24,29,34,39,44,49,Inf), 
-                   labels = category, include.lowest = TRUE)
+count_class <- cut(count, breaks = c(0,4,9,14,19,24,29,34,39,44,49,
+              Inf), 
+              labels = category, include.lowest = TRUE)
 ggplot()+
   geom_bar(aes(x = count_class, fill = count_class))+
   ylim(0,30000)+
@@ -154,7 +164,8 @@ tf %>%
   top_n(10) %>% 
   ungroup %>%
   ggplot() +
-  geom_col(aes(word, tf_idf, fill = predicted_category),show.legend = FALSE) +
+  geom_col(aes(word, tf_idf, fill = predicted_category),
+           show.legend = FALSE) +
   labs(x = NULL, y = "tf-idf") +
   facet_wrap(~predicted_category, ncol = 3, scales = "free") +
   coord_flip()
@@ -166,9 +177,13 @@ tf %>%
 set.seed(57)
 
 bin_data <- data[sample(1:nrow(data), 15000), ]
-my.matrix1 <- create_matrix(bin_data$cleaned_hm, language="english", removeNumbers=TRUE, stemWords=FALSE, weighting=tm::weightTfIdf)
+my.matrix1 <- create_matrix(bin_data$cleaned_hm, language="english", 
+                            removeNumbers=TRUE, stemWords=FALSE, 
+                            weighting=tm::weightTfIdf)
 
-container1 <- create_container(my.matrix1, bin_data$predicted_category, trainSize=1:8000, testSize =8001:10000,virgin = FALSE)
+container1 <- create_container(my.matrix1, bin_data$predicted_category,
+                               trainSize=1:8000, testSize =8001:10000,
+                               virgin = FALSE)
 
 ```
 
@@ -213,7 +228,8 @@ pr_tree <- create_precisionRecallSummary(container1, tree_results)
 
 set.seed(2)
 start_multi <- Sys.time()
-multinomial_model <- train_model(container1, "GLMNET", family="multinomial")
+multinomial_model <- train_model(container1, "GLMNET",
+                                 family="multinomial")
 end_multi <- Sys.time()
 
 multi_results <- classify_model(container1, multinomial_model)
@@ -296,7 +312,8 @@ times <- as.data.frame(as.numeric(unlist(times)))
 colnames(times) <- c("runtime")
 
 
-model <- c("SVM", "Multinomial", "Decision Trees", "Random Forests", "LDA")
+model <- c("SVM", "Multinomial", "Decision Trees", "Random Forests",
+           "LDA")
 
 run_table <- cbind(model, accuracy, times)
 
@@ -306,17 +323,22 @@ run_table <- cbind(model, accuracy, times)
 #Plot of Misclassification rate
 
 ggplot()+
-  geom_bar(aes(x= reorder(run_table$model, run_table$accuracy), y=run_table$accuracy, fill=run_table$model), stat="identity")+
-  labs(x="Model", y="Percentage Misclassified", title="Missclasstion Rates")+
+  geom_bar(aes(x= reorder(run_table$model, run_table$accuracy),
+               y=run_table$accuracy, fill=run_table$model),
+           stat="identity")+
+  labs(x="Model", y="Percentage Misclassified",
+       title="Missclasstion Rates")+
   guides(fill="none")
 ```
 
 ```{r , fig.cap = "Precision Recall Table for Category Achievement",eval=FALSE, echo=TRUE}
 #Precision Recall Table for achievement category
 
-pr_table <- rbind(pr_svm[1,], pr_multi[1,], pr_tree[1,], pr_rf[1,], pr_lda[1,])
+pr_table <- rbind(pr_svm[1,], pr_multi[1,], pr_tree[1,], pr_rf[1,],
+                  pr_lda[1,])
 
-rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree", "Random Forests", "LDA")
+rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree",
+                        "Random Forests", "LDA")
 
 pr_table
 ```

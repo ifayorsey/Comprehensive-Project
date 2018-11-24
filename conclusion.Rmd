@@ -1,44 +1,335 @@
 ---
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Conclusion {.unnumbered}
-  \setcounter{chapter}{3}
-	\setcounter{section}{0}
 
-If we don't want Conclusion to have a chapter number next to it, we can add the `{.unnumbered}` attribute.  This has an unintended consequence of the sections being labeled as 3.6 for example though instead of 4.1.  The \LaTeX\ commands immediately following the Conclusion declaration get things back on track.
+This study compares the performance of six machine learning algorithms in the classification of unstructured textual data. First, we discuss how the transformation of texts into term document matrices allows for words to be used as features in supervised methods. We also show how to each of the algorithms creates a classifier based on feature inputs, and predicts labels for new data. The results of this study show that fairly accurate text classifiers can be trained from relatively simple models. Following Joachim's findings, it was emprically shown that SVM models consistently outperformed competing methods in precision, recall, and runtime when applied to the categorization of happy moments. Given the high number of features and sparsity of the data, features were presumed to be linearly separable in p dimensions. This aided in the creation of decision boundaries cast by the SVM. Although other methods such as Random Forests and LDA had high classification rates, their runtimes made them poor alternatives. A more detailed look at precision and recall for the LDA model highlights how its failed assumptions impacted the accuracy of the model. Although beneficial due to their interpretability, the high variance of the decision tree demonstrated the limits of their predictive power.
 
-#### More info
+This study demonstrates the importance of taking the structure of one's data into consideration. Had I investigated some of the variables further, I may have realized methods like LDA were not suitable for this data before spending several hours building the model. It is equally important to consider the type of decision boundary being cast. In highly linear settings, LDA, Logistic or SVM may be the superior methods. If non-linear, kernels or transformations may need to take place.
 
-And here's some other random info: the first paragraph after a chapter title or section head _shouldn't be_ indented, because indents are to tell the reader that you're starting a new paragraph. Since that's obvious after a chapter or section title, proper typesetting doesn't add an indent there.
+Naturally, there were several limitations to this study, most of which had to do with the high dimensionality of the data. All the classifiers were trained on words represented as features for each document. Given the nature of human language there will be many words that may not appear in the training data. Additionally, working with sparse matrices is computationally inefficient. The presence of the zero value provides no information while allocating memory for each 32-bit value. A tdm of the entire dataset takes up 25 megabytes of spaces. Using 15,000 observations, a more manageable 3.1 mb tdm was created. While this made computations feasible, reducing the size of the corpus and tdm reduced the number of unique words encountered in the training data. 
+
+For future studies, we look to test other NLP techniques on this data, given that the results were derived from simple word index terms. For example, how might multi-word (n-grams), noun phrases, and weighting affect the classification accuracy? Another interesting factor to consider is the role of dimension reduction techniques such as principal component analysis and support vector decomposition. These methods project data onto lower dimensional subspaces so may alleviate some of the issues with sparse matrices, and provide improved algorithmic runtimes. 
 
 <!--
 If you feel it necessary to include an appendix, it goes here.
 -->
 
+\newpage
+
 \appendix
 
-\singlespacing
-
-# The First Appendix
-
-This first appendix includes all of the R chunks of code that were hidden throughout the document (using the `include = FALSE` chunk tag) to help with readibility and/or setup.
+# Appendix{.unumbered}
 
 #### In the main Rmd file:
 
-```{r ref.label = 'include_packages', results = 'hide', echo = TRUE}
+```{r, warning=FALSE, message=FALSE}
+library(acstats)
+library(RJSONIO) 
+library(RCurl) 
+library(ngram)
+library(tm)
+library(wordcloud)
+library(ggplot2)
+library(glmnet)
+library(text2vec)
+library(data.table)
+library(magrittr)
+library(dplyr)
+library(mosaic)
+library(RTextTools)
+library(e1071)
+# library(caret)
+library(tidyr)
+library(stringr)
+library(jsonlite)
+library(tidytext)
+library(rpart)
+library(broom)
+library(kableExtra)
+#library(MASS) #lda 
 ```
 
-```{r ref.label = "packages", echo = TRUE}
+```{r,eval=FALSE, echo=TRUE }
+#Loading Data
+
+setwd("~/Desktop/Statistics/Comps/Comps - Fayorsey/Comps-Fayorsey19E")
+data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
+
+data$predicted_category <- as.factor(data$predicted_category)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Creating Term Document Matrix
+
+set.seed(7)
+random_hm <- sample(1:nrow(data), 15000) 
+corpus    <- Corpus(VectorSource(data$cleaned_hm[random_hm]))
+skipWords <- function(x) removeWords(x, words = c(stopwords(kind = "en"),'happy', 'day', 'got', 'went', 'today', 'made', 'one', 'two', 'time', 'last', 'first', 'going', 'getting', 'took', 'found', 'lot', 'really', 'saw', 'see', 'month', 'week', 'day', 'yesterday', 'year', 'ago', 'now', 'still', 'since', 'something', 'great', 'good', 'long', 'thing', 'toi', 'without', 'yesteri', '2s', 'toand', 'ing'))
+funcs <- list(skipWords, stripWhitespace, removeNumbers, removePunctuation, tolower)
+a         <- tm_map(corpus, FUN = tm_reduce, tmFuns = funcs)
+a_tdm     <- TermDocumentMatrix(a)
+m         <- as.matrix(a_tdm)
+v         <- sort(rowSums(m), decreasing = TRUE)
+d         <- data.frame(word = names(v), freq = v)
+d <- head(d, 10);d
+```
+
+```{r, fig.cap = "Term Document Matrix for First Three Responses",eval=FALSE, echo=TRUE}
+#Displaying TDM for first three observations
+
+a_dtm <- DocumentTermMatrix(a)
+wa <- as.matrix(a_dtm)
+
+
+wa[1:3,1:4]
+```
+
+```{r, fig.height=3, fig.cap = "PieChart",eval=FALSE, echo=TRUE}
+#PieChart of Categories
+
+ggplot(data, aes(x=predicted_category, fill=predicted_category))+
+  geom_bar()+
+  labs(title = "Distribution of Predicted Category")+
+  guides(fill="none")+
+  coord_polar(theta = "y", start=0)
+```
+
+```{r,eval=FALSE, echo=TRUE }
+#Summary of wordcount
+
+count <- sapply(data$cleaned_hm, wordcount) # Counts number of words
+summary(count)
+```
+
+```{r, fig.height=3, fig.cap = "Word Count Distribution",eval=FALSE, echo=TRUE}
+#Distribution of Word Counts
+
+category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+              "40-44","45-49",">=50")
+count_class <- cut(count, breaks = c(0,4,9,14,19,24,29,34,39,44,49,Inf), 
+                   labels = category, include.lowest = TRUE)
+ggplot()+
+  geom_bar(aes(x = count_class, fill = count_class))+
+  ylim(0,30000)+
+  labs(x = "Word Count", y = "Number of Happy Moments", 
+       title = "Word Count Distribution")+
+  guides(fill = "none")
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#TD-IDF
+
+words <- data %>%
+  unnest_tokens(word, cleaned_hm) %>%
+  count(predicted_category, word, sort = TRUE) %>%
+  ungroup()
+
+totalwords <- words %>% 
+  group_by(predicted_category) %>% 
+  summarize(total = sum(n))
+
+words <- left_join(words, totalwords);words
+
+tf <- words %>%
+  bind_tf_idf(word, predicted_category, n);tf
+
+tf %>%
+  select(-total) %>%
+  filter(n >=30) %>% 
+  arrange(desc(tf_idf));tf
+
+```
+
+```{r, warning=FALSE , fig.cap = "TD-IDF per Category",eval=FALSE, echo=TRUE}
+#TD-IDF Graph
+
+tf %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(predicted_category) %>% 
+  top_n(10) %>% 
+  ungroup %>%
+  ggplot() +
+  geom_col(aes(word, tf_idf, fill = predicted_category),show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~predicted_category, ncol = 3, scales = "free") +
+  coord_flip()
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Creating containers for models
+
+set.seed(57)
+
+bin_data <- data[sample(1:nrow(data), 15000), ]
+my.matrix1 <- create_matrix(bin_data$cleaned_hm, language="english", removeNumbers=TRUE, stemWords=FALSE, weighting=tm::weightTfIdf)
+
+container1 <- create_container(my.matrix1, bin_data$predicted_category, trainSize=1:8000, testSize =8001:10000,virgin = FALSE)
+
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#SVM model
+
+set.seed(6)
+start_svm <- Sys.time()
+svm_model <- train_model(container1, "SVM")
+end_svm <- Sys.time()
+
+svm_results <- classify_model(container1, svm_model)
+ac_svm <- mean(svm_results$SVM_LABEL != bin_data[8001:10000,9])
+
+table(svm_results$SVM_LABEL, bin_data[8001:10000,9])
+
+
+end_svm - start_svm
+
+pr_svm <- create_precisionRecallSummary(container1, svm_results)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Tree Model
+
+set.seed(1)
+start_tree <- Sys.time()
+tree_model <- train_model(container1, "TREE")
+end_tree <- Sys.time()
+
+tree_results <- classify_model(container1, tree_model)
+table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+
+ac_tree <- (682+363+202+39)/2000
+end_tree - start_tree
+
+pr_tree <- create_precisionRecallSummary(container1, tree_results)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Multinomial Model
+
+set.seed(2)
+start_multi <- Sys.time()
+multinomial_model <- train_model(container1, "GLMNET", family="multinomial")
+end_multi <- Sys.time()
+
+multi_results <- classify_model(container1, multinomial_model)
+table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+ac_multi <- mean(multi_results$GLMNET_LABEL != bin_data[8001:10000,9])
+end_multi - start_multi
+
+pr_multi <- create_precisionRecallSummary(container1, multi_results)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Bagging Model
+
+# set.seed(3)
+# start_bagging <- Sys.time()
+# lda_model <- train_model(container1, "BAGGING")
+# end_bagging <- Sys.time()
+# 
+# bagging_results <- classify_model(container1, lda_model)
+# table(bagging_results$BAGGING_LABEL, bin_data[8001:10000,9])
+# ac_bagging <- mean(bagging_results$BAGGING_LABEL != bin_data[8001:10000,9])
+# 
+# end_bagging - start_bagging
+# pr_bag <- create_precisionRecallSummary(container1, bagging_results)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#Random Forests Model
+
+set.seed(4)
+start_rf <- Sys.time()
+rf_model <- train_model(container1, "RF", ntree=10)
+end_rf <- Sys.time()
+
+rf_results <- classify_model(container1, rf_model)
+table( rf_results$FORESTS_LABEL, bin_data[8001:10000,9])
+ac_rf <- mean(rf_results$FORESTS_LABEL != bin_data[8001:10000,9])
+end_rf-start_rf
+
+pr_rf <- create_precisionRecallSummary(container1, rf_results)
+```
+
+```{r,eval=FALSE, echo=TRUE}
+#LDA Model
+
+set.seed(5)
+start_lda <- Sys.time()
+lda_model <- train_model(container1, "SLDA")
+end_lda <- Sys.time()
+
+lda_results <- classify_model(container1, lda_model)
+table(lda_results$SLDA_LABEL, bin_data[8001:10000,9])
+ac_lda <- mean(lda_results$SLDA_LABEL != bin_data[8001:10000,9])
+end_lda - start_lda
+
+pr_lda <- create_precisionRecallSummary(container1, lda_results)
 ```
 
 
-#### In [](#ref_labels):
+```{r,eval=FALSE, echo=TRUE}
+#Runtime table
 
-```{r ref.label = 'include_packages_2', results = 'hide', echo = TRUE}
+time_svm <- end_svm - start_svm
+
+# time_bagging <- end_bagging - start_bagging
+
+time_rf <- end_rf - start_rf
+
+time_multi <- end_multi - start_multi
+
+time_lda <- end_lda - start_lda
+
+time_tree <- end_tree - start_tree
+
+times <- c(time_svm, time_multi, time_tree, time_rf, time_lda) 
+accuracy <- c(ac_svm, ac_multi, ac_tree, ac_rf, ac_lda)
+
+times <- as.data.frame(as.numeric(unlist(times)))
+
+colnames(times) <- c("runtime")
+
+
+model <- c("SVM", "Multinomial", "Decision Trees", "Random Forests", "LDA")
+
+run_table <- cbind(model, accuracy, times)
+
 ```
 
-# The Second Appendix, for Fun
+```{r, fig.cap = "Bar Plot of Missclasification Rate",eval=FALSE, echo=TRUE}
+#Plot of Misclassification rate
+
+ggplot()+
+  geom_bar(aes(x= reorder(run_table$model, run_table$accuracy), y=run_table$accuracy, fill=run_table$model), stat="identity")+
+  labs(x="Model", y="Percentage Misclassified", title="Missclasstion Rates")+
+  guides(fill="none")
+```
+
+```{r , fig.cap = "Precision Recall Table for Category Achievement",eval=FALSE, echo=TRUE}
+#Precision Recall Table for achievement category
+
+pr_table <- rbind(pr_svm[1,], pr_multi[1,], pr_tree[1,], pr_rf[1,], pr_lda[1,])
+
+rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree", "Random Forests", "LDA")
+
+pr_table
+```
+
+```{r , fig.cap = "Decision Tree Confusion Matrix",eval=FALSE, echo=TRUE}
+#Decision Tree Confusion Matrix
+
+table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+```
+
+```{r , fig.cap = "Multinomial Confusion Matrix",eval=FALSE, echo=TRUE}
+#Multinomial Confusion Matrix
+
+table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+```
 

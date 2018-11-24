@@ -46,6 +46,7 @@ library(tidytext)
 library(rpart)
 library(broom)
 library(kableExtra)
+library(devtools)
 #library(MASS) #lda 
 ```
 
@@ -180,7 +181,7 @@ tf %>%
 
 ```
 
-```{r, echo=FALSE, warning=FALSE , fig.cap = "TD-IDF per Category"}
+```{r, echo=FALSE, warning=FALSE , fig.cap = "TD-IDF per Category", message=F}
 tf %>%
   arrange(desc(tf_idf)) %>%
   mutate(word = factor(word, levels = rev(unique(word)))) %>% 
@@ -196,11 +197,9 @@ tf %>%
 
 As shown in the figure above, a breakdown of the highest tf-idf word per category yields further insight into words associated with each label. For phrases related to achievement, words like “won”, “received”, and “accepted” have the highest adjusted usage. In responses categorized as exercise, we see terms related to working out and equipment used. These key terms provide natural separators by which our algorithms can uses to classify future responses. In the next section, we discuss some of the methods used to predict the categories of happy moments. 
 
-
-```{r box_label, results = "asis", echo=FALSE}
-label(path = "figure/Algo.png", 
-      caption = "Framework of Text Classification", 
-      label = "delays", type = "figure",
-      scale = .5)
-```
-
+\begin{figure}[htbp]
+\centering
+\includegraphics[scale = 0.5,angle = 0]{figure/Algo.png}
+\caption[Framework of Text Classification]{\normalsize{Framework of Text Classification}}
+\label{fig:delays}
+\end{figure}

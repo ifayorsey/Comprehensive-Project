@@ -19,6 +19,9 @@ library(stringr)
 library(jsonlite)
 library(tidytext)
 library(rpart)
+library(lessR)
+library(knitr)
+library(kableExtra)
 #library(MASS) #lda 
 ```
 
@@ -30,7 +33,7 @@ data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
 data$predicted_category <- as.factor(data$predicted_category)
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, cache=TRUE}
 set.seed(57)
 
 bin_data <- data[sample(1:nrow(data), 15000), ]
@@ -163,12 +166,13 @@ run_table <- cbind(model, accuracy, times)
 
 ### Run Time
 
-Training times for the 8,000 responses varied substantially across all methods. The linear SVM and decision tree were amongst the fastest trained models taking just `r run_table[1,3]` and `r run_table[2,3]` seconds respectively. The multinomial logistic was the fastest model, taking just  `r run_table[3,3]` seconds. These were all significantly faster than Random Forests (`r run_table[4,3]` seconds) and LDA (`r run_table[5,3]` seconds). 
+Training times for the 8,000 responses varied substantially across all methods. The linear SVM and decision tree were amongst the fastest trained models taking just `r run_table[1,3]` and `r run_table[2,3]` seconds respectively. The multinomial logistic was the fastest model, taking just  `r run_table[3,3]` seconds. 
 
 The higher average runtime for the ensemble method follows convention given that it is an aggregation of several learning methods. The runtime of the LDA model initially came as a surprise, however LDA computes discriminant scores $\delta_k(x)$ by finding a linear combination of the independent variables. In a dtm setting, this becomes a linear combination of over 10,000 variables for each of the 6 categories. The training time of the SVM, decision tree, and multinomial models were quite impressive, given the nature of the problem when applied to larger data sets.
 
+
 ```{r, echo=FALSE, fig.cap = "Performance Metrics"}
-run_table
+kable(run_table, format = "markdown")
 ```
 
 ### Classification Accuracy
@@ -190,32 +194,25 @@ pr_table <- rbind(pr_svm[1,], pr_multi[1,], pr_tree[1,], pr_rf[1,], pr_lda[1,])
 
 rownames(pr_table) <- c("SVM", "Multinomial", "Decision Tree", "Random Forests", "LDA")
 
-pr_table
+kable(pr_table, caption = "Precision-Recall Table for Achievement Category", format = "markdown")
+
 ```
 
 As you can see, the most efficient classifier had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a low precision of 0.64 and high recall of 0.96. However unlike the decision tree, the overall accuracy of the multinomial was quite high (77.5% labeled correctly). When their confusion matrices are compared, it is immediately apparent that 2 classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This lead to poor generalizability, and the algorithm only predicting the majority categories. On the other hand, the multinomial accurately predicted a high proportion of the other classes.
 
 
-```{r, echo=FALSE, , fig.cap = "Decision Tree Confusion Matrix"}
-table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+```{r, echo=FALSE, , fig.cap = "Decision Tree Confusion Matrix" ,fig.width=3}
+table1 <- table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
+kable(table1[,1:5], longtable=T, format = "markdown") 
+
 ```
 
-```{r, echo=FALSE, , fig.cap = "Multinomial Confusion Matrix"}
-table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+```{r, echo=FALSE, , fig.cap = "Multinomial Confusion Matrix", fig.width=3}
+table2 <- table(multi_results$GLMNET_LABEL, bin_data[8001:10000,9])
+kable(table2[,1:5], longtable=T, format = "markdown")
+
 ```
 
-
-\newpage
-
-## Conclusion:
-
-This study compares the performance of six machine learning algorithms in the classification of unstructured textual data. First, we discuss how the transformation of texts into term document matrices allows for words to be used as features in supervised methods. We also show how to each of the algorithms creates a classifier based on feature inputs, and predicts labels for new data. The results of this study show that fairly accurate text classifiers can be trained from relatively simple models. Following Joachim's findings, it was emprically shown that SVM models consistently outperformed competing methods in precision, recall, and runtime when applied to the categorization of happy moments. Given the high number of features and sparsity of the data, features were presumed to be linearly separable in p dimensions. This aided in the creation of decision boundaries cast by the SVM. Although other methods such as Random Forests and LDA had high classification rates, their runtimes made them poor alternatives. A more detailed look at precision and recall for the LDA model highlights how its failed assumptions impacted the accuracy of the model. Although beneficial due to their interpretability, the high variance of the decision tree demonstrated the limits of their predictive power.
-
-This study demonstrates the importance of taking the structure of one's data into consideration. Had I investigated some of the variables further, I may have realized methods like LDA were not suitable for this data before spending several hours building the model. It is equally important to consider the type of decision boundary being cast. In highly linear settings, LDA, Logistic or SVM may be the superior methods. If non-linear, kernels or transformations may need to take place.
-
-Naturally, there were several limitations to this study, most of which had to do with the high dimensionality of the data. All the classifiers were trained on words represented as features for each document. Given the nature of human language there will be many words that may not appear in the training data. Additionally, working with sparse matrices is computationally inefficient. The presence of the zero value provides no information while allocating memory for each 32-bit value. A tdm of the entire dataset takes up 25 megabytes of spaces. Using 15,000 observations, a more manageable 3.1 mb tdm was created. While this made computations feasible, reducing the size of the corpus and tdm reduced the number of unique words encountered in the training data. 
-
-For future studies, we look to test other NLP techniques on this data, given that the results were derived from simple word index terms. For example, how might multi-word (n-grams), noun phrases, and weighting affect the classification accuracy? Another interesting factor to consider is the role of dimension reduction techniques such as principal component analysis and support vector decomposition. These methods project data onto lower dimensional subspaces so may alleviate some of the issues with sparse matrices, and provide improved algorithmic runtimes. 
 
 
  

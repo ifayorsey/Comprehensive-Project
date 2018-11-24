@@ -10,7 +10,7 @@ abstract: >
 # If you'd rather include the preliminary content in files instead of inline
 # like below, use a command like that for the abstract above.  Note that a tab is # needed on the line after the >.
 acknowledgements: >
-  I want to thank a few people.
+  Professor Nick Horton, for being a constant pillar of support over these past 4 years at Amherst. Thank you for believeing in me and spurring me onwards. Whever statistics leads me from here, I will always be in your debt. Professor Amy Wagaman, for teaching me invaluable skills during probability and data analysis, and for reminding me to take things one step at a time. The entire Statistics Department at Amherst College, for equipping me with the skills to tackle future problems in a formulaic and interpretable way. Finally, my family - my parents and my sister - for never allowing me to accept failure and helping me become the man I am today.
 bibliography: bib/thesis.bib
 # Modify your specific bibliography database file and refer to it in the line above.
 csl: csl/apa.csl
@@ -58,7 +58,7 @@ This is an R chunk and chap0.Rmd refers to the Introductory chapter.  Feel free 
 This is for including Chapter 1.  Notice that it's also good practice to name your chunk.  This will help you debug potential issues as you knit.  The chunk above is called intro and the one below is called chapter1.  Feel free to change the name of the Rmd file as you wish, but don't forget to change it here from chap1.Rmd.
 -->
 
-```{r chapter1, child = 'CopyOfchap1.Rmd'}
+```{r chapter1, child = 'CopyOfchap1.Rmd', cache=TRUE}
 ```
 
 

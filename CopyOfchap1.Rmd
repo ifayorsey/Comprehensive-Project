@@ -52,7 +52,6 @@ library(devtools)
 
 
 # Data
-
 The data used for this analysis is a series happy moments. In collaboration with the  University of Tokyo, MIT researchers interviewed thousands of people and asked them to list 10 happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into HappyDB, a corpus of 100,535 happy moments. The data set is host publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
 
 It is important to note that this curated data set contains cleaned textual data. In it includes 9 variables, many of which identify the author and qualities of the texts.  The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category. For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.

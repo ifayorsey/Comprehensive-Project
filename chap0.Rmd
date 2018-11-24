@@ -4,7 +4,6 @@
 
 # Introduction {.unnumbered}
 
-
 By 2022, 93% of all data in the digital universe will be unstructured (Big Data, 1). As the wealth of information stored in comments, tweets, and reviews increases, so does the growing interest in extracting insight from this unstructured data. Organizations such as Amazon, Apple, and Facebook have begun recruiting researchers to investigate how data can be used to better reach their customers. Over the years, this research has led to break throughs in text categorization – the assignment of natural language texts to predefined categories based on content – which has applications in areas such as search engines and customer relationship management.
 Some of the biggest challenges when working with unstructured data pertain to the volume of data. By nature, a large percentage of the data companies collect is unverified, and remain in their uncleaned, user generated state. When drawing insights from this data, it is vital that the data is transformed into an actionable form. 
 In the case of analyzing text, there are 171,476 words in the English language, making natural language processing a difficult task when dealing with its large volume. In this paper, we look to find the most computationally efficient methods of analyzing natural language.
@@ -14,7 +13,6 @@ Six supervised methods were used in this analysis:  Support Vector Machines (SVM
 * Chapter 1 provides background information on the chosen dataset, how it was mined, how it was transformed, and an exploratory analysis of the features within the data
 * Chapter 2 provides the theoretical background of each learning algorithm used in the experiment
 * Chapter 3 gives and interpretation of the results and concludes
-
 
 ### Previous Work
 

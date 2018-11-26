@@ -139,7 +139,7 @@ summary(count)
 
 #### Term Count
 
-In figure 1.2, the majority of entries are between 5 and 14 words. Over 4,000 reviews contain over 50 words. Many of these words add little to no value to an algorithmic interpretation of the sentence. These are the commonly used words such as “a”, “I”, “was” that were removed from the corpus.
+In Figure 1.2, the majority of entries are between 5 and 14 words. Over 4,000 reviews contain over 50 words. Many of these words add little to no value to an algorithmic interpretation of the sentence. These are the commonly used words such as “a”, “I”, “was” that were removed from the corpus.
 
 ```{r, echo=FALSE, fig.height=3, fig.cap = "Word Count Distribution"}
 category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
@@ -156,7 +156,7 @@ ggplot()+
 
 #### Terms used in each category
 
-Two metrics frequently used to quantify the importance of a word are it’s term frequency (tf), and inverse document frequency (idf). Tf measures how frequently a word appears in a document, while idf weights frequently used words less than words rarely used (Leopold, 2002). When combined, the tf-idf is the frequency of a term adjusted by how rarely it is used.	
+Two metrics frequently used to quantify the importance of a word are it’s term frequency (tf), and inverse document frequency (idf). Term frequency measures how frequently a word appears in a document, while idf weights frequently used words less than words rarely used (Leopold, 2002). When combined, the tf-idf is the frequency of a term adjusted by how rarely it is used.	
 	
 ```{r, include=FALSE}
 words <- data %>%

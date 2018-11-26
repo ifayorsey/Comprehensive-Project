@@ -10,8 +10,10 @@ output: pdf_document
 You can delete the header-includes (lines 3-5 above) if you like and also the chunk below since it is loaded in the skeleton.Rmd file.  They are included so that chap2.Rmd will compile by itself when you hit Knit PDF.
 -->
 
-
-
+```{r}
+minitrain <- dplyr::sample_frac(iris, .7)
+minitest <- setdiff(iris,minitrain)
+```
 
 
 # Theoretical Background {#the-background}
@@ -25,9 +27,6 @@ The objective is to minimize the classification error rate. The classification e
 The Support Vector Machines (SVM) approach to classification is a generalization of the maximal margin classifier to non-linear decision boundaries. It is first defined by a hyperplane, which is a flat subspace existing in a $p-1$ dimensional setting. The mathematical definition of a hyperplanes is a line with: $$\beta_0+\beta_1X_1+\beta_2X_2+...+\beta_pX_p=0$$
 	
 The hyperplane essentially divides a p-dimensional space into two halves depending on whether or not the linear equation is greater than zero or less than zero for a given $X=(X_1,X_2,...,X_p)^T$. In the scenario where $X$ is an $n * p$ matrix where observations fall into two classes $y_1,y_2,...y_n$ between ${-1,1}$. If a separating hyperlane exists, it can be used to construst an intuitive classifier based on the $G(x) = sign[x_i^T\beta+\beta_0]$. The optimization problem $$max M$$ subject to $$y_i(x_i^T\beta+\beta_0) \ge M, i = 1, ...,N$$ Where *M* is the width of the margin. 
-
-
-![Support Vector Machine.](figure/SVM.png)
 
 In a high dimensional setting however, this is unlikely to be the case. A soft margin classifier aims to address this by allowing some observations to follow on the wrong side of the margin or even hyperplane. These observations correspond to training points that have been misclassified by the support vector classifier. This constraint can now be modified to be: $$y_i(x_i^T\beta+\beta_0) \ge M - \xi$$.
 
@@ -47,12 +46,23 @@ The issue of non-linearity is typically addressed by enlarging the feature space
 
 ## Decision Trees
 
-Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In this setting, every node is a word in the document term matrix. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class *k* observations in node *m*, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m.  This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate.
+Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In this setting, every node is a word in the document term matrix. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class *k* observations in node *m*, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m.  This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate. 
 
-One benefit of decision trees are their interpretability. However do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
+Figure **x** is a simple decision tree that fits chooses petal length and width as nodes.  In this instance, all observations in the test set were correctly guessed. 
+
+Do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
 
 
-![Decision Tree](figure/Tree.png)
+```{r}
+tree <- rpart::rpart(Species ~., data=minitrain, method = "class")
+
+tree_pred <- predict(tree, minitest, type="class")
+
+knitr::kable(table(tree_pred, minitest$Species))
+
+rpart.plot::rpart.plot(tree, box.palette="RdBu", shadow.col="gray")
+
+```
 
 
 ## Bagging
@@ -65,8 +75,7 @@ Due to the algorithms greedy nature, a series of decision trees may have highly 
 
 
 ## Random Forests
-Random Forests algorithms improve on the bootstrap aggregation by decorrelating trees. The main differences is that in a random forest setting, only a random sample of *m* predictors from *p* variables can be chosen as a splitting feature. This alleviates the issue described earlier by not considering the one strong predictor in approximately $(p-m)/p$ of the splits. Situations where *m = p* is simply a bootstrap aggregation (Hastie, 319). Smaller values of m are traditionally helpful when there is a large number of correlated features.
-
+Random Forests algorithms improve on the bootstrap aggregation by decorrelating trees. The main differences is that in a random forest setting, only a random sample of *m* predictors from *p* variables can be chosen as a splitting feature. This alleviates the issue described earlier by not considering the one strong predictor in approximately $(p-m)/p$ of the splits. Situations where *m = p* is simply a bootstrap aggregation (Hastie, 319). Smaller values of m are traditionally helpful when there is a large number of correlated features. Continuing with the iris data set, the random forests model improved on the decision tree estimate ()
 
 ## Linear Discriminant Analysis
 
@@ -82,7 +91,23 @@ When simplified further, the above becomes: $$\delta_k(x)=x^T\Sigma^{-1}\mu_k-1/
  $\hat{\Sigma}_k =\Sigma_{k=1}^K$ $_k(x_i-\hat{\mu}_k(x_i-\hat{\mu}_k)^T/(N-K)$
 	
 	
-As you can see the LDA decision rule depends on x only through a linear combination of its elements. One drawback however of the LDA is the restrictive conditions associated with the algorithm. LDA assumes that features within the data set are a series of independent multivariate gaussians with identical covariance matrices. Additionally, LDA requires the number of features to be less than the sample size. As p approaches n, the performance of the model declines. If the assumption of uniform variance is highly off, then LDA can suffer high bias (Hastie, 153). It will be interesting to see how these violations play out in a high dimensional, sparse setting.
+```{r, echo=FALSE}
+iris_lda <- MASS::lda(Species ~., minitrain)
+
+lda_pred <- predict(iris_lda, minitest);lda_pred
+
+knitr::kable(table(lda_pred$class, minitest$Species))
+
+
+lda_mse <- mean(lda_pred$class != minitest$Species)
+
+sepal_den <- ggformula::gf_dens(~ Sepal.Length, data = iris, adjust = 0.56)
+
+sepal_den
+
+```
 	
+As you can see the LDA decision rule depends on x only through a linear combination of its elements. One drawback however of the LDA is the restrictive conditions associated with the algorithm. LDA assumes that features within the data set are a series of independent multivariate gaussians with identical covariance matrices. Additionally, LDA requires the number of features to be less than the sample size. As p approaches n, the performance of the model declines. If the assumption of uniform variance is highly off, then LDA can suffer high bias (Hastie, 153). On the iris data set, the LDA model had a missclassification rate of `r lda_mse`. Further exploratory data analysis shows that the variable sepal length does not satisfy the normality assumption. Such violations may become more apparent in a highly sparse setting.
 	
-![LDA](figure/LDA.png)
+
+

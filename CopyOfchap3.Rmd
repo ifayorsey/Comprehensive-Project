@@ -22,6 +22,7 @@ library(rpart)
 library(lessR)
 library(knitr)
 library(kableExtra)
+library(randomForest)
 #library(MASS) #lda 
 ```
 

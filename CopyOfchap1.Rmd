@@ -46,6 +46,7 @@ library(tidytext)
 library(rpart)
 library(broom)
 library(kableExtra)
+library(rpart.plot)
 #library(MASS) #lda 
 ```
 

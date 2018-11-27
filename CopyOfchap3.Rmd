@@ -180,7 +180,7 @@ kable(run_table, format = "latex")
 
 ## Classification Accuracy
 
-As stated in the introduction the goal of this analysis was to compare classification error rates between models. SVMs had the lowest misclassification rate with `r round(ac_svm, roundval)`.  This was a slight improvement on the multinomial model (`r round(ac_multi, roundval)` misclassification rate). LDA and Random Forest performed suprisingling well (`r round(ac_lda, roundval)` for LDA and `r round(ac_rf, roundval)` for rf). The decision tree produced the highest misclassification rate with `r round(ac_tree, roundval)` incorrectly categorized. Figure 3.1 shows the misclassification rates for all five algorithms tested.
+As stated in the introduction the goal of this analysis was to compare classification error rates between models.  The classification error rate is defined as the proportion of training observations in the region that do not belong to the most common class. SVMs had the lowest misclassification rate of `r round(ac_svm, roundval)`.  This was a slight improvement on the multinomial model (`r round(ac_multi, roundval)` misclassification rate). LDA and Random Forests performed suprisingling well (`r round(ac_lda, roundval)` for LDA and `r round(ac_rf, roundval)` for Random Forests). The decision tree produced the highest misclassification rate with `r round(ac_tree, roundval)` incorrectly categorized. Figure 3.1 shows the misclassification rates for all five algorithms tested.
 
 ```{r, echo=FALSE, fig.cap = "Bar Plot of Missclasification Rate"}
 ggplot()+
@@ -190,7 +190,7 @@ ggplot()+
 ```
 
 	
-While accuracy is a valid measure for information retrieval, in situations where classes are imbalanced, always predicting one class may yield a high accuracy. Precision and recall can be used to focus the evaluation on the correctly label categories (true positives). Precision is defined as the proportion of items *i* placed in the category correctly out of every algorithmic declaration of *i*, while recall is the proportion of items correctly guessed that truly belong in the category (Platt, 5). Low precision-high recall systems guess a label frequently, however a significant portion of labels are incorrect. High precision-low recall systems are the opposite, predicting a class less frequently but more accurately. Ideal systems have both high precision and high recall,will return many results, with all results labeled correctly. The table below consists of precision-recall values for the category achievement for all 5 algorithms.
+While accuracy is a valid measure for information retrieval, in situations where classes are imbalanced, always predicting one class may yield a high accuracy. Precision and recall can be used to focus the evaluation on the correctly label categories (true positives). Precision is defined as the proportion of items *i* placed in the category correctly out of every algorithmic declaration of *i*, while recall is the proportion of items correctly guessed that truly belong in the category (Platt, 5). Low precision-high recall systems guess a label frequently, however a significant portion of labels are incorrect. High precision-low recall systems are the opposite, predicting a class less frequently but more accurately. Ideal systems have both high precision and high recall. Table 3.1 shows precision-recall values for the category achievement, across for all 5 algorithms.
 
 ```{r, echo=FALSE, , fig.cap = "Precision Recall Table for Category Achievement"}
 pr_table <- rbind(pr_svm[1,1:2], pr_multi[1,1:2], pr_tree[1,1:2], pr_rf[1,1:2], pr_lda[1,1:2])
@@ -201,12 +201,12 @@ kable(pr_table, caption = "Precision-Recall Table for Achievement Category", for
 
 ```
 
-The most efficient classifier (SVM) had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a low precision of 0.64 and high recall of 0.96. However unlike the decision tree, the overall misclassification rate for the multinomial was quite low (`r ac_multi`% labeled incorrectly). When their confusion matrices are compared, it is immediately apparent that two classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This leads to poor generalizability, and the algorithm only predicting the majority categories. On the other hand, the multinomial model accurately predicted a high proportion of the other classes. 
+The most efficient classifier (SVM) had high precision and high recall for the category achievement. Although the decision tree predicted achievement frequently, only 0.49 were correctly labeled. Interestingly enough, this was also this case for the multinomial model, which had a low precision of 0.64 and high recall of 0.96. However unlike the decision tree, the overall misclassification rate for the multinomial was quite low (`r ac_multi`% labeled incorrectly). When their confusion matrices are compared, it is immediately apparent that two classes were not predicted in the decision tree model. Due to its greedy nature, the decision tree appeared to overfit on the noise in the training data. This led to poor generalizability, and the algorithm only predicting the majority categories acheivement, affection and bonding. On the other hand, the multinomial model accurately predicted a higher proportion of the other classes. 
 
 
 ```{r treeconfusion, echo=FALSE, results='asis'}
 table1 <- table(tree_results$TREE_LABEL, bin_data[8001:10000,9])
-kable(table1[,1:7], format= "latex", caption= "Decision Tree Confusion Matrix \\label{tab:treeconfusion}") 
+kable(table1[,1:6], format= "latex", caption= "Decision Tree Confusion Matrix \\label{tab:treeconfusion}")
 
 ```
 

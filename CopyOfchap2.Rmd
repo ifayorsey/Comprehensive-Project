@@ -18,17 +18,14 @@ minitest <- setdiff(iris,minitrain)
 
 # Theoretical Background {#the-background}
 
-Broadly speaking, there are two types of machine learning techniques: supervised, and unsupervised methods. In a supervised setting, inputs are mapped to a predefined label, and models are trained to predict labels for a new set of inputs. In the case of text classification, each response and associated category are learned by a classifier which then predicts labels for new responses. In an unsupervised setting, there is no corresponding labels to the inputs. These methods cluster response based on associations between responses. Given that this study aims to compare the performance of classifiers when labeling texts, we remain in a supervised setting.
-
-The objective is to minimize the classification error rate. The classification error rate is defined as the proportion of training observations in the region that do not belong to the most common class.
-
+Broadly speaking, there are two types of machine learning techniques: supervised, and unsupervised methods. In a supervised setting, inputs are mapped to a predefined label, and models are trained to predict labels for a new set of inputs. In the case of text classification, each response and associated category are learned by a classifier which then predicts labels for new responses. In an unsupervised setting, there is no corresponding labels to the inputs. These methods cluster responses based on associations between them. Given that this study aims to compare the performance of classifiers when labeling texts, we remain in a supervised setting.
 
 ## Support Vector Machines
 The Support Vector Machines (SVM) approach to classification is a generalization of the maximal margin classifier to non-linear decision boundaries. It is first defined by a hyperplane, which is a flat subspace existing in a $p-1$ dimensional setting. The mathematical definition of a hyperplanes is a line with: $$\beta_0+\beta_1X_1+\beta_2X_2+...+\beta_pX_p=0$$
 	
-The hyperplane essentially divides a p-dimensional space into two halves depending on whether or not the linear equation is greater than zero or less than zero for a given $X=(X_1,X_2,...,X_p)^T$. In the scenario where $X$ is an $n * p$ matrix where observations fall into two classes $y_1,y_2,...y_n$ between ${-1,1}$. If a separating hyperlane exists, it can be used to construst an intuitive classifier based on the $G(x) = sign[x_i^T\beta+\beta_0]$. The optimization problem $$max M$$ subject to $$y_i(x_i^T\beta+\beta_0) \ge M, i = 1, ...,N$$ Where *M* is the width of the margin. 
+The hyperplane essentially divides a p-dimensional space into two halves depending on whether or not the linear equation is greater than zero or less than zero for a given $X=(X_1,X_2,...,X_p)^T$. In the scenario where $X$ is an $n * p$ matrix where observations fall into two classes $y_1,y_2,...y_n$ between ${-1,1}$. If a separating hyperlane exists, it can be used to construct an intuitive classifier based on the $G(x) = sign[x_i^T\beta+\beta_0]$. The optimization problem $$max M$$ subject to $$y_i(x_i^T\beta+\beta_0) \ge M, i = 1, ...,N$$ Where *M* is the width of the margin. 
 
-In a high dimensional setting however, this is unlikely to be the case. A soft margin classifier aims to address this by allowing some observations to follow on the wrong side of the margin or even hyperplane. These observations correspond to training points that have been misclassified by the support vector classifier. This constraint can now be modified to be: $$y_i(x_i^T\beta+\beta_0) \ge M - \xi$$.
+In a high dimensional setting however, this is unlikely to be the case. A soft margin classifier aims to address this by allowing some observations to fall on the wrong side of the margin or even hyperplane. These observations correspond to training points that have been misclassified by the support vector classifier. This constraint can now be modified to be: $$y_i(x_i^T\beta+\beta_0) \ge M - \xi$$.
 
 
 Where $\xi$ is a slack variable representing observations on the wrong side of the margin/hyperplane. In this setting, points on the wrong side of the margin are penalized proportionally to the distance from the boundary. 
@@ -38,9 +35,6 @@ Tuning parameter, *C* can be introduced restraining the number of points that vi
 In situations where there are more than *k* > 2 classes, *k* SVMs are fit and compared to the remaining k-1 classes. Observations are assigned to a class based on which $\beta_0k+\beta_{1k}X_{1k}+...+\beta_{pk}X_{pk}$ is the greatest (Hastie, 337-356).
 
 SVMs hold a unique property in that they can classify observations independent of the dimensionality of the feature space (Joachim). By separating the data on the largest margin rather than the number of features, our model can be easily generalized, irrespective of the size of the feature space.
-	
-	
-The issue of non-linearity is typically addressed by enlarging the feature space by using higher order polynomial functions of the predictors.
 
 
 
@@ -48,9 +42,7 @@ The issue of non-linearity is typically addressed by enlarging the feature space
 
 Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In this setting, every node is a word in the document term matrix. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class *k* observations in node *m*, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m.  This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate. 
 
-Figure **x** is a simple decision tree that fits chooses petal length and width as nodes.  In this instance, all observations in the test set were correctly guessed. 
-
-Do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
+Figure **x** is a simple decision tree that chooses petal length and width as nodes. Do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
 
 
 ```{r, echo=F}
@@ -59,10 +51,12 @@ tree <- rpart::rpart(Species ~., data=minitrain, method = "class")
 tree_pred <- predict(tree, minitest, type="class")
 
 knitr::kable(table(tree_pred, minitest$Species), caption = "Decision Tree Confusion Matrix")
-
-rpart.plot::rpart.plot(tree, shadow.col="gray")
-
 ```
+
+```{r,echo=F, fig.cap="Decision Tree to Determine Plant Species"}
+rpart.plot::rpart.plot(tree, shadow.col="gray")
+```
+
 
 
 ## Bagging
@@ -75,7 +69,7 @@ Due to the algorithms greedy nature, a series of decision trees may have highly 
 
 
 ## Random Forests
-Random Forests algorithms improve on the bootstrap aggregation by decorrelating trees. The main differences is that in a random forest setting, only a random sample of *m* predictors from *p* variables can be chosen as a splitting feature. This alleviates the issue described earlier by not considering the one strong predictor in approximately $(p-m)/p$ of the splits. Situations where *m = p* is simply a bootstrap aggregation (Hastie, 319). Smaller values of m are traditionally helpful when there is a large number of correlated features. Continuing with the iris data set, the random forests model improved on the decision tree estimate ()
+Random Forests algorithms improve on the bootstrap aggregation by decorrelating trees. The main differences is that in a random forest setting, only a random sample of *m* predictors from *p* variables can be chosen as a splitting feature. This alleviates the issue described earlier by not considering the one strong predictor in approximately $(p-m)/p$ of the splits. Situations where *m = p* is simply a bootstrap aggregation (Hastie, 319). Smaller values of m are traditionally helpful when there is a large number of correlated features.
 
 ## Linear Discriminant Analysis
 
@@ -86,9 +80,9 @@ When simplified further, the above becomes: $$\delta_k(x)=x^T\Sigma^{-1}\mu_k-1/
 
  $\hat{\pi}_k = N_k/N$ where $N_k$ is the number of class-$k$ observations
  
- $\hat{\mu}_k = \Sigma_{g=k}x_i/N_k$
+ $$\hat{\mu}_k = \Sigma_{g=k}x_i/N_k$$
  
- $\hat{\Sigma}_k =\Sigma_{k=1}^K$ $_k(x_i-\hat{\mu}_k(x_i-\hat{\mu}_k)^T/(N-K)$
+ $$\hat{\Sigma}_k =\Sigma_{k=1}^K$$ $$_k(x_i-\hat{\mu}_k(x_i-\hat{\mu}_k)^T/(N-K)$$
 	
 	
 ```{r, echo=F}
@@ -106,7 +100,7 @@ The decision rule cast by LDA depends on *x* only through a linear combination o
 
 knitr::kable(table(lda_pred$class, minitest$Species), caption= "Linear Discriminant Analysis Confusion Matrix")
 
-sepal_den <- ggplot2::ggplot( data = iris, ggplot2::aes(x = Sepal.Length)) + ggplot2::geom_density(adjust = 0.56) + ggplot2::facet_wrap(~Species, ncol = 4) + ggplot2::labs(title = "") 
+sepal_den <- ggplot2::ggplot( data = iris, ggplot2::aes(x = Sepal.Length)) + ggplot2::geom_density(adjust = 0.56) + ggplot2::facet_wrap(~Species, ncol = 4) + ggplot2::labs(title = "Sepal Length Distribution by Species") 
 sepal_den
 
 ```

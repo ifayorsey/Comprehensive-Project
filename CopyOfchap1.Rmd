@@ -50,33 +50,26 @@ library(rpart.plot)
 #library(MASS) #lda 
 ```
 
-
-# Data
-
-The data used in this analysis is a series happy moments. In collaboration with the  University of Tokyo, Massachusetts Institute of Technology researchers interview thousands of people and asked them to list ten happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into *HappyDB*, a corpus of 100,535 happy moments. The data set is host publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
-
-It is important to note that this curated data set contains cleaned textual data. In it includes 9 variables, many of which identify the author and qualities of the texts.  The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category. For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.
-
 ```{r, include=FALSE}
 setwd("~/Desktop/Statistics/Comps/Comps - Fayorsey/Comps-Fayorsey19E")
 data <- read.csv("cleaned_hm.csv", stringsAsFactors = FALSE)
+```
 
+# Data
+
+The data used in this analysis is a series happy moments. In collaboration with the  University of Tokyo, Massachusetts Institute of Technology researchers interviewed thousands of people and asked them to list ten happy moments that occurred within the last 24 hours. Their responses were recorded and compiled into *HappyDB*, a corpus of 100,535 happy moments. The data set is hosted publicly on github, as a zip file (https://rit-public.github.io/HappyDB/).
+
+It is important to note that this curated data set contains cleaned textual data. The variables of interest in this analysis are cleaned_hm, the list of happy moments, and its associated predicted category (achievement, affection, bonding, enjoying the moment, exercise, leisure, and nature). For my analysis, I sampled 15,000 of these responses and trained on 80% of the data.
+
+```{r, echo=F}
+happydb <- cbind(data[1:3,"cleaned_hm"], data[1:3,9])
+colnames(happydb) <- c("Responses", "Category")
+kable(happydb, caption = "Happy DB")
 data$predicted_category <- as.factor(data$predicted_category)
 ```
 
--------------------------------------------------------------------------------------
-Response                                                          Predicted Category
------------------------------------------------------------- -----------------------
- I was happy when my son got 90% marks in his examination             Acheivement
- 
- I went to the gym this morning and did yoga                           Excercise
- 
- My dad and I went fishing                                              Bonding
 
-------------------------------------------------------------- ----------------------
-
-
-###Data Preprocessing
+## Data Preprocessing
 
 ```{r, include = FALSE}
 set.seed(7)
@@ -94,6 +87,7 @@ d <- head(d, 10);d
 
 
 In order to analyze how words influence a predicted category, the data set had to be transformed. First, each character vector response is converted into a corpus. A corpus is simply a collection of natural langauge constructed with a specific purpose. The corpus consists of 15,000 responses samples from the larger dataset.   
+
 ```{r}
 as.character(corpus[[1]])
 ```
@@ -111,22 +105,22 @@ a_dtm <- DocumentTermMatrix(a)
 wa <- as.matrix(a_dtm)
 
 
-wa[1:3,1:4]
+kable(wa[1:3,1:4], caption = "Term Document Matrix for First Three Responses", format = "latex")
 ```
 
 
 ## Exploratory Data Analysis:
 
-In this section, I present some preliminary results from summaries and exploratory analysis of the cleaned data obtained above. First we look at the response variable **predicted category**. Next, I explore statistics regarding the explanatory variable **words**.
+In this section, I present some preliminary results from summaries and exploratory analysis of the cleaned data obtained above. First we look at the response variable **category**. Next, I explore statistics regarding the explanatory variable **terms**.
 
-#### Predicted Category
+### Category
 
 Affection and achievement were the most talked about categories (33.9% and 34.1% respectively). This follows conventional logic given that love and sense of accomplishment are vital traits to a good quality of life. Nature and exercises accounted for just 1.2% and 1.8% of labeled responses in the entire data set.
 
 In a predictive setting, having highly disproportionate classes can lead to errors when making predictions based on that training data. When classes are unequally represented, models may simply decide to always predict a certain class in order to achieve a high accuracy. This accuracy paradox does not reflect effective predictions for the model, but rather the state of the underlying distribution. While this is not the case for our data set, consideration must be taken for the classifications of minority labels.
 
 ```{r, echo=FALSE, fig.height=3, fig.cap = "Pie Chart"}
-ggplot(data, aes(x=predicted_category, fill=predicted_category))+
+ggplot(data, aes(x=predicted_category))+
   geom_bar()+
   labs(title = "Distribution of Predicted Category")+
   guides(fill="none")+
@@ -138,9 +132,9 @@ count <- sapply(data$cleaned_hm, wordcount) # Counts number of words
 summary(count)
 ```
 
-#### Term Count
+### Term Count
 
-In Figure 1.2, the majority of entries are between 5 and 14 words. Over 4,000 reviews contain over 50 words. Many of these words add little to no value to an algorithmic interpretation of the sentence. These are the commonly used words such as “a”, “I”, “was” that were removed from the corpus.
+Figure 1.2 shows the majority of entries are between 5 and 14 words. Over 4,000 reviews contain over 50 words. Many of these words add little to no value to an algorithmic interpretation of the sentence. These are the commonly used words such as “a”, “I”, “was” that were removed from the corpus.
 
 ```{r, echo=FALSE, fig.height=3, fig.cap = "Word Count Distribution"}
 category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
@@ -148,14 +142,14 @@ category <- c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
 count_class <- cut(count, breaks = c(0,4,9,14,19,24,29,34,39,44,49,Inf), 
                    labels = category, include.lowest = TRUE)
 ggplot()+
-  geom_bar(aes(x = count_class, fill = count_class))+
+  geom_bar(aes(x = count_class))+
   ylim(0,30000)+
   labs(x = "Word Count", y = "Number of Happy Moments", 
        title = "Word Count Distribution")+
   guides(fill = "none")
 ```
 
-#### Terms used in each category
+### Term Frequency - Inverse Document Frequency
 
 Two metrics frequently used to quantify the importance of a word are it’s term frequency (tf), and inverse document frequency (idf). Term frequency measures how frequently a word appears in a document, while idf weights frequently used words less than words rarely used (Leopold, 2002). When combined, the tf-idf is the frequency of a term adjusted by how rarely it is used.	
 	
@@ -189,13 +183,13 @@ tf %>%
   top_n(10) %>% 
   ungroup %>%
   ggplot() +
-  geom_col(aes(word, tf_idf, fill = predicted_category),show.legend = FALSE) +
+  geom_col(aes(word, tf_idf),show.legend = FALSE) +
   labs(x = NULL, y = "tf-idf") +
   facet_wrap(~predicted_category, ncol = 3, scales = "free") +
   coord_flip()
 ```
 
-Figure 1.2 shows a breakdown of the highest tf-idf word per category yields further insight into words associated with each label. For phrases related to achievement, words like “won”, “received”, and “accepted” have the highest adjusted usage. In responses categorized as exercise, we see terms related to working out and equipment used. These key terms provide natural separators by which the algorithms can uses to classify future responses. In the next section, I discuss some of the methods used to predict the categories of happy moments. 
+Figure 1.3 shows a breakdown of the highest tf-idf word per category yields further insight into words associated with each label. For phrases related to achievement, words like “won”, “job”, and “bonus” have the highest adjusted usage. In responses categorized as exercise, we see terms related to working out and equipment used. These key terms provide natural separators by which the algorithms can uses to classify future responses. In the next section, I discuss some of the methods used to predict the categories of happy moments. 
 
 
 \begin{figure}[htbp]

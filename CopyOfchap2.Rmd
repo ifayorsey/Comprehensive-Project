@@ -42,7 +42,7 @@ SVMs hold a unique property in that they can classify observations independent o
 
 Decision trees partition a feature space into a number of simpler regions. Decision trees are composed of two main parts: a node and leaf. Each node in a decision tree represents a variable by which observations can be group based on conditions associated with that variable. In this setting, every node is a word in the document term matrix. In a classification setting, the tree is split based on which variable minimizes the classification error rate. If we let $\hat{p}_{mk}=1/N_m*\Sigma I(y_i = k)$ be the proportion of class *k* observations in node *m*, observsations are classified to the class where $k(m)=_{argmax} \hat{p}_{mk}$ (Hastie, 312). This can also be described as the majority class for node m.  This greedy algorithm chooses which variable to split on based on the largest drop in misclassification rate. 
 
-Figure **x** is a simple decision tree that chooses petal length and width as nodes. Do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
+The figure above is a simple decision tree that chooses petal length and width as nodes. Do to their high variance, resulting trees can vary greatly if the training data is modified, and can lead to drastically different test labels. Traditionally, classification and regression decision trees are associated with high variance and low bias.
 
 
 ```{r, echo=F}
